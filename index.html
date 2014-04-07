@@ -1,0 +1,79 @@
+<html>
+<head>
+    <title>Mapa.li</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <h1>Add Image</h1>
+
+    <div>
+        <span style="" id="status"></span><input type="file" id="files"/>
+    </div>
+    <!-- <div style="width:300px;" id="preview"></div> -->
+
+    
+    
+    <form method="POST" action="http://mapali.herokuapp.com/submit_form/">
+        <input type="hidden" id="lng" name="lng" value="" />
+        <input type="hidden" id="lat" name="lat" value="" />
+
+        <input type="hidden" id="image_url" name="image_url" value="" />
+        <br />
+        <textarea id="description" name="description" rows="5"></textarea>
+        <br />
+        <input type="submit" value="Update profile" />
+    </form>
+
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.js"></script>
+    <script type="text/javascript" src="static/js/lodash.min.js"></script>
+    <script type="text/javascript" src="static/js/s3upload.js"></script>
+    <script type="text/javascript" src="static/js/spin.min.js"></script>
+    <script type="text/javascript" src="static/js/jquery.geolocation.min.js"></script>
+
+    <script type="text/javascript">
+
+    function s3_upload(){
+        var s3upload = new S3Upload({
+            file_dom_selector: '#files',
+            s3_sign_put_url: 'http://mapali.herokuapp.com/sign_s3/',
+            onProgress: function(percent, message) {
+                // $('#status').html('Upload progress: ' + percent + '% ' + message);
+                var target = document.getElementById('status');
+                var spinner = new Spinner().spin(target);
+            },
+            onFinishS3Put: function(public_url) {
+                $('#status').html('<img src="static/media/done.png" style="width:32px;" />');
+                $("#image_url").val(public_url);
+                // $("#preview").html('<img src="'+public_url+'" style="width:300px;" />');
+            },
+            onError: function(status) {
+                $('#status').html('Upload error: ' + status);
+            }
+        });
+    }
+
+    function update_position(loc){
+        lat = loc.coords.latitude;
+        lng = loc.coords.longitude;
+
+        $('#lng').val(lng);
+        $('#lat').val(lat);
+    }
+
+    $().ready(function() {
+        
+        $.geolocation.get({
+            win: update_position, 
+            fail: function(e){
+               // alert ("Please allow watching your position");
+            }, 
+            options: {'enableHighAccuracy': true }
+        });
+        
+        $.geolocation.watch({win: update_position});
+
+        $('#files').on("change", s3_upload);
+    });
+    </script>
+</body>
+</html>
